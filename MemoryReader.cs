@@ -322,7 +322,7 @@ namespace LiveSplit.Memory {
 		[DllImport("kernel32.dll", SetLastError = true)]
 		private static extern int VirtualQueryEx(IntPtr hProcess, IntPtr lpAddress, out MemInfo lpBuffer, int dwLength);
 
-		private List<MemInfo> memoryInfo;
+		public List<MemInfo> memoryInfo;
 		public Func<MemInfo, bool> MemoryFilter = delegate (MemInfo info) {
 			return (info.State & 0x1000) != 0 && (info.Protect & 0x100) == 0;
 		};

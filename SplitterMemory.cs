@@ -13,7 +13,7 @@ namespace LiveSplit.Nestopia {
 			lastHooked = DateTime.MinValue;
 		}
 		public string Pointer() {
-			return RAM.Pointer.ToString("X");
+			return RAM.GetPointer(Program).ToString("X");
 		}
 		public T Read<T>(int address) where T : struct {
 			return RAM.Read<T>(Program, 0x0, address);
@@ -130,7 +130,7 @@ namespace LiveSplit.Nestopia {
 			if (signatures != null) {
 				MemorySearcher searcher = new MemorySearcher();
 				searcher.MemoryFilter = delegate (MemInfo info) {
-					return (info.Protect & 0x4) != 0 && (info.State & 0x1000) != 0 && (info.Type & 0x20000) != 0;
+					return (info.Protect & 0x4) != 0 && (info.State & 0x1000) != 0 && (info.Type & 0x20000) != 0 && (long)info.RegionSize == 0xe3000;
 				};
 				for (int i = 0; i < signatures.Length; i++) {
 					ProgramSignature signature = signatures[i];
@@ -142,7 +142,7 @@ namespace LiveSplit.Nestopia {
 					}
 				}
 
-				return IntPtr.Zero;
+				return searcher.memoryInfo.Count > 0 ? searcher.memoryInfo[0].BaseAddress + 0xb8 : IntPtr.Zero;
 			}
 
 			return (IntPtr)program.Read<uint>(program.MainModule.BaseAddress, offsets);

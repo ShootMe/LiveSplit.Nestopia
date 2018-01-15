@@ -109,20 +109,22 @@ namespace LiveSplit.Nestopia {
 					switch (key) {
 						case "CurrentSplit": curr = currentSplit.ToString(); break;
 						case "Pointer": curr = mem.Pointer(); break;
-						case "Type": curr = split.Type.ToString(); break;
-						case "Size": curr = split.Size.ToString(); break;
-						case "Offset": curr = split.Offset.ToString(); break;
-						case "SplitValue": curr = split.Value.ToString(); break;
+						case "Type": curr = split != null ? split.Type.ToString() : string.Empty; break;
+						case "Size": curr = split != null ? split.Size.ToString() : string.Empty; break;
+						case "Offset": curr = split != null ? split.Offset.ToString() : string.Empty; break;
+						case "SplitValue": curr = split != null ? split.Value.ToString() : string.Empty; break;
 						case "LastValue": curr = lastValue.ToString(); break;
 						case "Value":
 							long value = 0;
-							switch (split.Size) {
-								case ValueSize.UInt8: value = mem.Read<byte>(split.Offset); break;
-								case ValueSize.Int8: value = mem.Read<sbyte>(split.Offset); break;
-								case ValueSize.UInt16: value = mem.Read<ushort>(split.Offset); break;
-								case ValueSize.Int16: value = mem.Read<short>(split.Offset); break;
-								case ValueSize.UInt32: value = mem.Read<uint>(split.Offset); break;
-								case ValueSize.Int32: value = mem.Read<int>(split.Offset); break;
+							if (split != null) {
+								switch (split.Size) {
+									case ValueSize.UInt8: value = mem.Read<byte>(split.Offset); break;
+									case ValueSize.Int8: value = mem.Read<sbyte>(split.Offset); break;
+									case ValueSize.UInt16: value = mem.Read<ushort>(split.Offset); break;
+									case ValueSize.Int16: value = mem.Read<short>(split.Offset); break;
+									case ValueSize.UInt32: value = mem.Read<uint>(split.Offset); break;
+									case ValueSize.Int32: value = mem.Read<int>(split.Offset); break;
+								}
 							}
 							curr = value.ToString();
 							break;
