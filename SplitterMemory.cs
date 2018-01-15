@@ -1,10 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using LiveSplit.Memory;
+using System;
 using System.Diagnostics;
-using LiveSplit.Memory;
 namespace LiveSplit.Nestopia {
 	public partial class SplitterMemory {
-		private static ProgramPointer RAM = new ProgramPointer(AutoDeref.None, new ProgramSignature(PointerVersion.V1, "010303030303030303030303", 12));
+		private static ProgramPointer RAM = new ProgramPointer(AutoDeref.None, 0x3b1388);
 		public Process Program { get; set; }
 		public bool IsHooked { get; set; } = false;
 		private DateTime lastHooked;
@@ -22,8 +21,19 @@ namespace LiveSplit.Nestopia {
 			IsHooked = Program != null && !Program.HasExited;
 			if (!IsHooked && DateTime.Now > lastHooked.AddSeconds(1)) {
 				lastHooked = DateTime.Now;
-				Process[] processes = Process.GetProcessesByName("Nestopia");
-				Program = processes.Length == 0 ? null : processes[0];
+				Process[] processes = Process.GetProcesses();
+				Program = null;
+				for (int i = 0; i < processes.Length; i++) {
+					Process process = processes[i];
+					if (process.ProcessName.Equals("nestopia", StringComparison.OrdinalIgnoreCase)) {
+						Program = process;
+						break;
+					} else if (process.ProcessName.Equals("fceux", StringComparison.OrdinalIgnoreCase)) {
+						Program = process;
+						break;
+					}
+				}
+
 				if (Program != null) {
 					MemoryReader.Update64Bit(Program);
 					IsHooked = true;
@@ -127,25 +137,16 @@ namespace LiveSplit.Nestopia {
 			return Pointer;
 		}
 		private IntPtr GetVersionedFunctionPointer(Process program) {
-			if (signatures != null) {
+			if (program.ProcessName.Equals("nestopia", StringComparison.OrdinalIgnoreCase)) {
 				MemorySearcher searcher = new MemorySearcher();
 				searcher.MemoryFilter = delegate (MemInfo info) {
 					return (info.Protect & 0x4) != 0 && (info.State & 0x1000) != 0 && (info.Type & 0x20000) != 0 && (long)info.RegionSize == 0xe3000;
 				};
-				for (int i = 0; i < signatures.Length; i++) {
-					ProgramSignature signature = signatures[i];
-
-					IntPtr ptr = searcher.FindSignature(program, signature.Signature);
-					if (ptr != IntPtr.Zero) {
-						Version = signature.Version;
-						return ptr + signature.Offset;
-					}
-				}
 
 				return searcher.memoryInfo.Count > 0 ? searcher.memoryInfo[0].BaseAddress + 0xab8 : IntPtr.Zero;
 			}
 
-			return (IntPtr)program.Read<uint>(program.MainModule.BaseAddress, offsets);
+			return program.MainModule.BaseAddress + offsets[0];
 		}
 	}
 }
