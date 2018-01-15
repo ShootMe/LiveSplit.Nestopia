@@ -142,7 +142,7 @@ namespace LiveSplit.Nestopia {
 					}
 				}
 
-				return searcher.memoryInfo.Count > 0 ? searcher.memoryInfo[0].BaseAddress + 0xb8 : IntPtr.Zero;
+				return searcher.memoryInfo.Count > 0 ? searcher.memoryInfo[0].BaseAddress + 0xab8 : IntPtr.Zero;
 			}
 
 			return (IntPtr)program.Read<uint>(program.MainModule.BaseAddress, offsets);
