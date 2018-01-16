@@ -15,7 +15,6 @@ namespace LiveSplit.Nestopia {
 		internal static string[] keys = { "CurrentSplit", "Pointer", "Type", "Size", "Offset", "Value", "LastValue" };
 		private SplitterMemory mem;
 		private int currentSplit = -1, lastLogCheck;
-		private long lastValue;
 		private bool hasLog = false;
 		private Dictionary<string, string> currentValues = new Dictionary<string, string>();
 		private SplitterSettings settings;
@@ -67,14 +66,14 @@ namespace LiveSplit.Nestopia {
 						case ValueSize.Int32: value = mem.Read<int>(split.Offset); break;
 					}
 					switch (split.Type) {
-						case SplitType.Equals: shouldSplit = value == split.Value && value != lastValue; break;
-						case SplitType.GreaterThan: shouldSplit = value > split.Value && value != lastValue; break;
-						case SplitType.LessThan: shouldSplit = value < split.Value && value != lastValue; break;
-						case SplitType.Changed: shouldSplit = value != lastValue; break;
-						case SplitType.ChangedGreaterThan: shouldSplit = value > lastValue; break;
-						case SplitType.ChangedLessThan: shouldSplit = value < lastValue; break;
+						case SplitType.Equals: shouldSplit = value == split.Value && value != split.LastValue; break;
+						case SplitType.GreaterThan: shouldSplit = value > split.Value && value != split.LastValue; break;
+						case SplitType.LessThan: shouldSplit = value < split.Value && value != split.LastValue; break;
+						case SplitType.Changed: shouldSplit = value != split.LastValue; break;
+						case SplitType.ChangedGreaterThan: shouldSplit = value > split.LastValue; break;
+						case SplitType.ChangedLessThan: shouldSplit = value < split.LastValue; break;
 					}
-					lastValue = value;
+					split.LastValue = value;
 				}
 			}
 
@@ -113,7 +112,7 @@ namespace LiveSplit.Nestopia {
 						case "Size": curr = split != null ? split.Size.ToString() : string.Empty; break;
 						case "Offset": curr = split != null ? split.Offset.ToString() : string.Empty; break;
 						case "SplitValue": curr = split != null ? split.Value.ToString() : string.Empty; break;
-						case "LastValue": curr = lastValue.ToString(); break;
+						case "LastValue": curr = split != null ? split.LastValue.ToString() : string.Empty; break;
 						case "Value":
 							long value = 0;
 							if (split != null) {

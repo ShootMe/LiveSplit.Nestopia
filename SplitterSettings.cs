@@ -176,6 +176,7 @@ namespace LiveSplit.Nestopia {
 		public ValueSize Size { get; set; }
 		public int Offset { get; set; }
 		public long Value { get; set; }
+		public long LastValue;
 		public SplitInfo() { }
 		public SplitInfo(string copy) {
 			string[] info = copy.Split(',');
