@@ -378,7 +378,13 @@ namespace LiveSplit.Memory {
 				if (dump == 0) { break; }
 
 				long regionSize = (long)memInfo.RegionSize;
-				if (regionSize <= 0 || (int)regionSize != regionSize) { break; }
+				if (regionSize <= 0 || (int)regionSize != regionSize) {
+					if (MemoryReader.is64Bit) {
+						current = (IntPtr)((ulong)memInfo.BaseAddress + (ulong)memInfo.RegionSize);
+						continue;
+					}
+					break;
+				}
 
 				if (MemoryFilter(memInfo)) {
 					memoryInfo.Add(memInfo);

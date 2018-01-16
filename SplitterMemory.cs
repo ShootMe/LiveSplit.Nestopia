@@ -6,6 +6,7 @@ namespace LiveSplit.Nestopia {
 		private static ProgramPointer RAM = new ProgramPointer(AutoDeref.None, 0x3b1388);
 		public Process Program { get; set; }
 		public bool IsHooked { get; set; } = false;
+		private bool isEmuHawk = false;
 		private DateTime lastHooked;
 
 		public SplitterMemory() {
@@ -15,6 +16,13 @@ namespace LiveSplit.Nestopia {
 			return RAM.GetPointer(Program).ToString("X");
 		}
 		public T Read<T>(int address) where T : struct {
+			if (isEmuHawk) {
+				IntPtr ram = (IntPtr)RAM.Read<ulong>(Program, 0x0, 0x38, 0x8, 0x8, 0x10, 0x28);
+				if (ram != IntPtr.Zero) {
+					return Program.Read<T>(ram + address);
+				}
+				return RAM.Read<T>(Program, 0x0, 0x20, address + 0x10);
+			}
 			return RAM.Read<T>(Program, 0x0, address);
 		}
 		public bool HookProcess() {
@@ -23,12 +31,17 @@ namespace LiveSplit.Nestopia {
 				lastHooked = DateTime.Now;
 				Process[] processes = Process.GetProcesses();
 				Program = null;
+				isEmuHawk = false;
 				for (int i = 0; i < processes.Length; i++) {
 					Process process = processes[i];
 					if (process.ProcessName.Equals("nestopia", StringComparison.OrdinalIgnoreCase)) {
 						Program = process;
 						break;
 					} else if (process.ProcessName.Equals("fceux", StringComparison.OrdinalIgnoreCase)) {
+						Program = process;
+						break;
+					} else if (process.ProcessName.Equals("emuhawk", StringComparison.OrdinalIgnoreCase)) {
+						isEmuHawk = true;
 						Program = process;
 						break;
 					}
@@ -123,7 +136,11 @@ namespace LiveSplit.Nestopia {
 				Pointer = GetVersionedFunctionPointer(program);
 				if (Pointer != IntPtr.Zero) {
 					if (AutoDeref != AutoDeref.None) {
-						Pointer = (IntPtr)program.Read<uint>(Pointer);
+						if (MemoryReader.is64Bit) {
+							Pointer = (IntPtr)program.Read<ulong>(Pointer);
+						} else {
+							Pointer = (IntPtr)program.Read<uint>(Pointer);
+						}
 						if (AutoDeref == AutoDeref.Double) {
 							if (MemoryReader.is64Bit) {
 								Pointer = (IntPtr)program.Read<ulong>(Pointer);
@@ -155,6 +172,20 @@ namespace LiveSplit.Nestopia {
 				}
 
 				return IntPtr.Zero;
+			} else if (program.ProcessName.Equals("emuhawk", StringComparison.OrdinalIgnoreCase)) {
+				MemorySearcher searcher = new MemorySearcher();
+				searcher.MemoryFilter = delegate (MemInfo info) {
+					return (info.Protect & 0x40) != 0 && (info.State & 0x1000) != 0 && (info.Type & 0x20000) != 0;
+				};
+				//BizHawk.Client.Common.Global.get_SystemInfo
+				ProgramSignature signature = new ProgramSignature(PointerVersion.V1, "488B0949BB????????????????390941FF13488BF0488BCE", -8);
+
+				IntPtr ptr = searcher.FindSignature(program, signature.Signature);
+				if (ptr != IntPtr.Zero) {
+					AutoDeref = AutoDeref.Single;
+					Version = signature.Version;
+					return ptr + signature.Offset;
+				}
 			}
 
 			return program.MainModule.BaseAddress + offsets[0];
