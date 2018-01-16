@@ -28,6 +28,7 @@
 			this.btnRemove = new System.Windows.Forms.Button();
 			this.cboType = new System.Windows.Forms.ComboBox();
 			this.ToolTips = new System.Windows.Forms.ToolTip(this.components);
+			this.chkSplit = new System.Windows.Forms.CheckBox();
 			this.picHandle = new System.Windows.Forms.PictureBox();
 			this.cboSize = new System.Windows.Forms.ComboBox();
 			this.txtOffset = new System.Windows.Forms.TextBox();
@@ -38,7 +39,7 @@
 			// btnRemove
 			// 
 			this.btnRemove.Image = ((System.Drawing.Image)(resources.GetObject("btnRemove.Image")));
-			this.btnRemove.Location = new System.Drawing.Point(438, 2);
+			this.btnRemove.Location = new System.Drawing.Point(419, 2);
 			this.btnRemove.Name = "btnRemove";
 			this.btnRemove.Size = new System.Drawing.Size(26, 23);
 			this.btnRemove.TabIndex = 4;
@@ -48,12 +49,22 @@
 			// cboType
 			// 
 			this.cboType.FormattingEnabled = true;
-			this.cboType.Location = new System.Drawing.Point(179, 3);
+			this.cboType.Location = new System.Drawing.Point(195, 3);
 			this.cboType.Name = "cboType";
-			this.cboType.Size = new System.Drawing.Size(167, 21);
+			this.cboType.Size = new System.Drawing.Size(132, 21);
 			this.cboType.TabIndex = 2;
 			this.cboType.SelectedIndexChanged += new System.EventHandler(this.cboType_SelectedIndexChanged);
 			this.cboType.Validating += new System.ComponentModel.CancelEventHandler(this.cboType_Validating);
+			// 
+			// chkSplit
+			// 
+			this.chkSplit.AutoSize = true;
+			this.chkSplit.Location = new System.Drawing.Point(24, 7);
+			this.chkSplit.Name = "chkSplit";
+			this.chkSplit.Size = new System.Drawing.Size(15, 14);
+			this.chkSplit.TabIndex = 6;
+			this.ToolTips.SetToolTip(this.chkSplit, "When checked this will trigger a split in LiveSplit");
+			this.chkSplit.UseVisualStyleBackColor = true;
 			// 
 			// picHandle
 			// 
@@ -70,29 +81,27 @@
 			// cboSize
 			// 
 			this.cboSize.FormattingEnabled = true;
-			this.cboSize.Location = new System.Drawing.Point(22, 3);
+			this.cboSize.Location = new System.Drawing.Point(42, 3);
 			this.cboSize.Name = "cboSize";
-			this.cboSize.Size = new System.Drawing.Size(107, 21);
+			this.cboSize.Size = new System.Drawing.Size(106, 21);
 			this.cboSize.TabIndex = 0;
 			this.cboSize.SelectedIndexChanged += new System.EventHandler(this.cboSize_SelectedIndexChanged);
 			this.cboSize.Validating += new System.ComponentModel.CancelEventHandler(this.cboSize_Validating);
 			// 
 			// txtOffset
 			// 
-			this.txtOffset.Location = new System.Drawing.Point(135, 3);
+			this.txtOffset.Location = new System.Drawing.Point(154, 3);
 			this.txtOffset.Name = "txtOffset";
-			this.txtOffset.Size = new System.Drawing.Size(38, 20);
+			this.txtOffset.Size = new System.Drawing.Size(35, 20);
 			this.txtOffset.TabIndex = 1;
-			this.txtOffset.TextChanged += new System.EventHandler(this.txtOffset_TextChanged);
 			this.txtOffset.Validating += new System.ComponentModel.CancelEventHandler(this.txtOffset_Validating);
 			// 
 			// txtValue
 			// 
-			this.txtValue.Location = new System.Drawing.Point(352, 3);
+			this.txtValue.Location = new System.Drawing.Point(333, 3);
 			this.txtValue.Name = "txtValue";
 			this.txtValue.Size = new System.Drawing.Size(80, 20);
 			this.txtValue.TabIndex = 3;
-			this.txtValue.TextChanged += new System.EventHandler(this.txtValue_TextChanged);
 			this.txtValue.Validating += new System.ComponentModel.CancelEventHandler(this.txtValue_Validating);
 			// 
 			// SplitterSplitSettings
@@ -100,6 +109,7 @@
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.AutoSize = true;
+			this.Controls.Add(this.chkSplit);
 			this.Controls.Add(this.txtValue);
 			this.Controls.Add(this.txtOffset);
 			this.Controls.Add(this.cboSize);
@@ -108,7 +118,7 @@
 			this.Controls.Add(this.picHandle);
 			this.Margin = new System.Windows.Forms.Padding(0);
 			this.Name = "SplitterSplitSettings";
-			this.Size = new System.Drawing.Size(470, 28);
+			this.Size = new System.Drawing.Size(451, 28);
 			((System.ComponentModel.ISupportInitialize)(this.picHandle)).EndInit();
 			this.ResumeLayout(false);
 			this.PerformLayout();
@@ -123,5 +133,6 @@
 		public System.Windows.Forms.ComboBox cboSize;
 		public System.Windows.Forms.TextBox txtOffset;
 		public System.Windows.Forms.TextBox txtValue;
+		public System.Windows.Forms.CheckBox chkSplit;
 	}
 }

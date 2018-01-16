@@ -74,6 +74,11 @@ namespace LiveSplit.Nestopia {
 						case SplitType.ChangedLessThan: shouldSplit = value < split.LastValue; break;
 					}
 					split.LastValue = value;
+
+					if (!split.ShouldSplit && shouldSplit) {
+						currentSplit++;
+						shouldSplit = false;
+					}
 				}
 			}
 
@@ -142,19 +147,6 @@ namespace LiveSplit.Nestopia {
 		}
 
 		public void Update(IInvalidator invalidator, LiveSplitState lvstate, float width, float height, LayoutMode mode) {
-			//Remove duplicate autosplitter componenets
-			IList<ILayoutComponent> components = lvstate.Layout.LayoutComponents;
-			bool hasAutosplitter = false;
-			for (int i = components.Count - 1; i >= 0; i--) {
-				ILayoutComponent component = components[i];
-				if (component.Component is SplitterComponent) {
-					if ((invalidator == null && width == 0 && height == 0) || hasAutosplitter) {
-						components.Remove(component);
-					}
-					hasAutosplitter = true;
-				}
-			}
-
 			GetValues();
 		}
 
@@ -175,10 +167,16 @@ namespace LiveSplit.Nestopia {
 			WriteLog("---------New Game-------------------------------");
 		}
 		public void OnUndoSplit(object sender, EventArgs e) {
-			currentSplit--;
+			while (currentSplit > 0 && !settings.Splits[--currentSplit].ShouldSplit) { }
+			while (currentSplit > 0 && !settings.Splits[currentSplit - 1].ShouldSplit) {
+				currentSplit--;
+			}
 			WriteLog(DateTime.Now.ToString(@"HH\:mm\:ss.fff") + " | " + Model.CurrentState.CurrentTime.RealTime.Value.ToString("G").Substring(3, 11) + ": CurrentSplit: " + currentSplit.ToString().PadLeft(24, ' '));
 		}
 		public void OnSkipSplit(object sender, EventArgs e) {
+			while (currentSplit < settings.Splits.Count && !settings.Splits[currentSplit].ShouldSplit) {
+				currentSplit++;
+			}
 			currentSplit++;
 			WriteLog(DateTime.Now.ToString(@"HH\:mm\:ss.fff") + " | " + Model.CurrentState.CurrentTime.RealTime.Value.ToString("G").Substring(3, 11) + ": CurrentSplit: " + currentSplit.ToString().PadLeft(24, ' '));
 		}

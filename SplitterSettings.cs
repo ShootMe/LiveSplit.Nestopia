@@ -36,6 +36,7 @@ namespace LiveSplit.Nestopia {
 				setting.cboSize.Text = SplitterSplitSettings.GetEnumDescription<ValueSize>(split.Size);
 				setting.txtOffset.Text = split.Offset.ToString();
 				setting.txtValue.Text = split.Value.ToString();
+				setting.chkSplit.Checked = split.ShouldSplit;
 				AddHandlers(setting);
 
 				flowMain.Controls.Add(setting);
@@ -49,6 +50,7 @@ namespace LiveSplit.Nestopia {
 			setting.cboSize.SelectedIndexChanged += new EventHandler(ControlChanged);
 			setting.txtOffset.TextChanged += new EventHandler(ControlChanged);
 			setting.txtValue.TextChanged += new EventHandler(ControlChanged);
+			setting.chkSplit.CheckedChanged += new EventHandler(ControlChanged);
 			setting.btnRemove.Click += new EventHandler(btnRemove_Click);
 		}
 		private void RemoveHandlers(SplitterSplitSettings setting) {
@@ -56,6 +58,7 @@ namespace LiveSplit.Nestopia {
 			setting.cboSize.SelectedIndexChanged -= ControlChanged;
 			setting.txtOffset.TextChanged -= ControlChanged;
 			setting.txtValue.TextChanged -= ControlChanged;
+			setting.chkSplit.CheckedChanged -= ControlChanged;
 			setting.btnRemove.Click -= btnRemove_Click;
 		}
 		public void btnRemove_Click(object sender, EventArgs e) {
@@ -88,7 +91,8 @@ namespace LiveSplit.Nestopia {
 							Type = SplitterSplitSettings.GetEnumValue<SplitType>(setting.cboType.Text),
 							Size = SplitterSplitSettings.GetEnumValue<ValueSize>(setting.cboSize.Text),
 							Offset = offset,
-							Value = value
+							Value = value,
+							ShouldSplit = setting.chkSplit.Checked
 						});
 					}
 				}
@@ -176,6 +180,7 @@ namespace LiveSplit.Nestopia {
 		public ValueSize Size { get; set; }
 		public int Offset { get; set; }
 		public long Value { get; set; }
+		public bool ShouldSplit { get; set; }
 		public long LastValue;
 		public SplitInfo() { }
 		public SplitInfo(string copy) {
@@ -207,9 +212,16 @@ namespace LiveSplit.Nestopia {
 					Value = temp;
 				}
 			}
+			ShouldSplit = true;
+			if (info.Length > 4) {
+				bool temp;
+				if (bool.TryParse(info[4], out temp)) {
+					ShouldSplit = temp;
+				}
+			}
 		}
 		public override string ToString() {
-			return Type.ToString() + "," + Size.ToString() + "," + Offset.ToString() + "," + Value.ToString();
+			return Type.ToString() + "," + Size.ToString() + "," + Offset.ToString() + "," + Value.ToString() + "," + ShouldSplit.ToString();
 		}
 	}
 }

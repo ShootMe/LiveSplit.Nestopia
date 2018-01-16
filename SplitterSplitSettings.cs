@@ -5,18 +5,16 @@ using System.Reflection;
 using System.Windows.Forms;
 namespace LiveSplit.Nestopia {
 	public partial class SplitterSplitSettings : UserControl {
-		public string Type { get; set; } = "";
-		public string ValueSize { get; set; } = "Unsigned 8 Bits";
-		public int Offset { get; set; } = 0;
-		public long Value { get; set; } = 0;
 		private int mX = 0;
 		private int mY = 0;
 		private bool isDragging = false;
 		public SplitterSplitSettings() {
 			InitializeComponent();
-			cboSize.SelectedItem = ValueSize;
-			txtOffset.Text = Offset.ToString();
-			txtValue.Text = Value.ToString();
+			cboSize.SelectedItem = "Unsigned 8 Bits";
+			cboType.SelectedItem = string.Empty;
+			txtOffset.Text = "0";
+			txtValue.Text = "0";
+			chkSplit.Checked = true;
 		}
 		private void cboType_Validating(object sender, CancelEventArgs e) {
 			string item = GetItemInList(cboSize);
@@ -29,17 +27,16 @@ namespace LiveSplit.Nestopia {
 		private void cboType_SelectedIndexChanged(object sender, EventArgs e) {
 			string splitDescription = cboType.SelectedValue.ToString();
 			SplitType split = GetEnumValue<SplitType>(splitDescription);
-			Type = split.ToString();
 			if (split == SplitType.Changed || split == SplitType.ChangedGreaterThan || split == SplitType.ChangedLessThan) {
 				txtValue.Visible = false;
-				btnRemove.Location = new System.Drawing.Point(352, 2);
+				btnRemove.Location = new System.Drawing.Point(333, 2);
 			} else {
-				btnRemove.Location = new System.Drawing.Point(438, 2);
+				btnRemove.Location = new System.Drawing.Point(419, 2);
 				txtValue.Visible = true;
 			}
 			txtValue.Tag = txtValue.Visible;
 
-			MemberInfo[] infos = typeof(SplitType).GetMember(Type);
+			MemberInfo[] infos = typeof(SplitType).GetMember(split.ToString());
 			DescriptionAttribute[] descriptions = null;
 			if (infos.Length > 0) {
 				descriptions = (DescriptionAttribute[])infos[0].GetCustomAttributes(typeof(DescriptionAttribute), false);
@@ -90,36 +87,30 @@ namespace LiveSplit.Nestopia {
 			if (cboSize.SelectedItem != null) {
 				string sizeDescription = cboSize.SelectedValue.ToString();
 				ValueSize size = GetEnumValue<ValueSize>(sizeDescription);
-				ValueSize = size.ToString();
 				if (size == Nestopia.ValueSize.Manual) {
 					txtValue.Tag = txtValue.Visible;
 					txtValue.Visible = false;
 					cboType.Visible = false;
 					txtOffset.Visible = false;
-					btnRemove.Location = new System.Drawing.Point(135, 2);
+					chkSplit.Visible = false;
+					chkSplit.Checked = true;
+					btnRemove.Location = new System.Drawing.Point(154, 2);
 				} else {
 					bool visible = txtValue.Tag == null ? true : (bool)txtValue.Tag;
-					btnRemove.Location = new System.Drawing.Point(visible ? 438 : 352, 2);
+					btnRemove.Location = new System.Drawing.Point(visible ? 419 : 333, 2);
 					txtValue.Visible = visible;
 					cboType.Visible = true;
 					txtOffset.Visible = true;
+					chkSplit.Visible = true;
 				}
 			}
 		}
 		private void txtOffset_Validating(object sender, CancelEventArgs e) {
 			int temp;
-			if (!int.TryParse(txtOffset.Text, NumberStyles.Any, null, out temp) || temp < 0 || temp > 2048) {
+			if (!int.TryParse(txtOffset.Text, NumberStyles.Any, null, out temp) || temp < 0 || temp >= 2048) {
 				txtOffset.Text = "0";
 			} else {
 				txtOffset.Text = temp.ToString();
-			}
-		}
-		private void txtOffset_TextChanged(object sender, EventArgs e) {
-			int temp;
-			if (!int.TryParse(txtOffset.Text, NumberStyles.Any, null, out temp) || temp < 0 || temp > 2048) {
-				Offset = 0;
-			} else {
-				Offset = temp;
 			}
 		}
 		private void txtValue_Validating(object sender, CancelEventArgs e) {
@@ -128,14 +119,6 @@ namespace LiveSplit.Nestopia {
 				txtValue.Text = "0";
 			} else {
 				txtValue.Text = temp.ToString();
-			}
-		}
-		private void txtValue_TextChanged(object sender, EventArgs e) {
-			long temp;
-			if (!long.TryParse(txtValue.Text, NumberStyles.Any, null, out temp) || temp > uint.MaxValue || temp < int.MinValue) {
-				Value = 0;
-			} else {
-				Value = temp;
 			}
 		}
 		private string GetItemInList(ComboBox cbo) {
