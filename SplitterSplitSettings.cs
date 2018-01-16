@@ -30,23 +30,36 @@ namespace LiveSplit.Nestopia {
 			string splitDescription = cboType.SelectedValue.ToString();
 			SplitType split = GetEnumValue<SplitType>(splitDescription);
 			Type = split.ToString();
-			MemberInfo info = typeof(SplitType).GetMember(Type)[0];
 			if (split == SplitType.Changed || split == SplitType.ChangedGreaterThan || split == SplitType.ChangedLessThan) {
 				txtValue.Visible = false;
-				btnRemove.Location = new System.Drawing.Point(363, 2);
+				btnRemove.Location = new System.Drawing.Point(352, 2);
 			} else {
 				btnRemove.Location = new System.Drawing.Point(438, 2);
 				txtValue.Visible = true;
 			}
-			DescriptionAttribute description = (DescriptionAttribute)info.GetCustomAttributes(typeof(DescriptionAttribute), false)[0];
-			ToolTips.SetToolTip(cboType, description.Description);
+			txtValue.Tag = txtValue.Visible;
+
+			MemberInfo[] infos = typeof(SplitType).GetMember(Type);
+			DescriptionAttribute[] descriptions = null;
+			if (infos.Length > 0) {
+				descriptions = (DescriptionAttribute[])infos[0].GetCustomAttributes(typeof(DescriptionAttribute), false);
+			}
+			if (descriptions != null && descriptions.Length > 0) {
+				ToolTips.SetToolTip(cboType, descriptions[0].Description);
+			} else {
+				ToolTips.SetToolTip(cboType, string.Empty);
+			}
 		}
 		public static T GetEnumValue<T>(string text) {
 			foreach (T item in Enum.GetValues(typeof(T))) {
 				string name = item.ToString();
-				MemberInfo info = typeof(T).GetMember(name)[0];
-				object[] attributes = info.GetCustomAttributes(typeof(DescriptionAttribute), false);
-				DescriptionAttribute description = attributes != null && attributes.Length > 0 ? (DescriptionAttribute)attributes[0] : null;
+
+				MemberInfo[] infos = typeof(T).GetMember(name);
+				DescriptionAttribute[] descriptions = null;
+				if (infos.Length > 0) {
+					descriptions = (DescriptionAttribute[])infos[0].GetCustomAttributes(typeof(DescriptionAttribute), false);
+				}
+				DescriptionAttribute description = descriptions != null && descriptions.Length > 0 ? descriptions[0] : null;
 
 				if (name.Equals(text, StringComparison.OrdinalIgnoreCase) || (description != null && description.Description.Equals(text, StringComparison.OrdinalIgnoreCase))) {
 					return item;
@@ -56,9 +69,13 @@ namespace LiveSplit.Nestopia {
 		}
 		public static string GetEnumDescription<T>(T item) {
 			string name = item.ToString();
-			MemberInfo info = typeof(T).GetMember(name)[0];
-			object[] attributes = info.GetCustomAttributes(typeof(DescriptionAttribute), false);
-			DescriptionAttribute description = attributes != null && attributes.Length > 0 ? (DescriptionAttribute)attributes[0] : null;
+
+			MemberInfo[] infos = typeof(T).GetMember(name);
+			DescriptionAttribute[] descriptions = null;
+			if (infos.Length > 0) {
+				descriptions = (DescriptionAttribute[])infos[0].GetCustomAttributes(typeof(DescriptionAttribute), false);
+			}
+			DescriptionAttribute description = descriptions != null && descriptions.Length > 0 ? descriptions[0] : null;
 
 			return description == null ? name : description.Description;
 		}
@@ -71,7 +88,22 @@ namespace LiveSplit.Nestopia {
 		}
 		private void cboSize_SelectedIndexChanged(object sender, EventArgs e) {
 			if (cboSize.SelectedItem != null) {
-				ValueSize = cboSize.SelectedItem.ToString();
+				string sizeDescription = cboSize.SelectedValue.ToString();
+				ValueSize size = GetEnumValue<ValueSize>(sizeDescription);
+				ValueSize = size.ToString();
+				if (size == Nestopia.ValueSize.Manual) {
+					txtValue.Tag = txtValue.Visible;
+					txtValue.Visible = false;
+					cboType.Visible = false;
+					txtOffset.Visible = false;
+					btnRemove.Location = new System.Drawing.Point(135, 2);
+				} else {
+					bool visible = txtValue.Tag == null ? true : (bool)txtValue.Tag;
+					btnRemove.Location = new System.Drawing.Point(visible ? 438 : 352, 2);
+					txtValue.Visible = visible;
+					cboType.Visible = true;
+					txtOffset.Visible = true;
+				}
 			}
 		}
 		private void txtOffset_Validating(object sender, CancelEventArgs e) {

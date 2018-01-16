@@ -234,7 +234,7 @@ namespace LiveSplit.Memory {
 			}
 			var buf = Marshal.AllocHGlobal(IntPtr.Size);
 			try {
-				var result = WinAPI.NtQueryInformationThread(hThread,ThreadInfoClass.ThreadQuerySetWin32StartAddress,buf, IntPtr.Size, IntPtr.Zero);
+				var result = WinAPI.NtQueryInformationThread(hThread, ThreadInfoClass.ThreadQuerySetWin32StartAddress, buf, IntPtr.Size, IntPtr.Zero);
 				if (result != 0) {
 					throw new Exception(string.Format("NtQueryInformationThread failed; NTSTATUS = {0:X8}", result));
 				}
@@ -327,6 +327,12 @@ namespace LiveSplit.Memory {
 			return (info.State & 0x1000) != 0 && (info.Protect & 0x100) == 0;
 		};
 
+		public byte[] ReadMemory(Process process, int index) {
+			MemInfo info = memoryInfo[index];
+			byte[] buff = new byte[(uint)info.RegionSize];
+			ReadProcessMemory(process.Handle, info.BaseAddress, buff, (uint)info.RegionSize, 0);
+			return buff;
+		}
 		public IntPtr FindSignature(Process process, string signature) {
 			byte[] pattern;
 			bool[] mask;
@@ -335,9 +341,8 @@ namespace LiveSplit.Memory {
 			int[] offsets = GetCharacterOffsets(pattern, mask);
 
 			for (int i = 0; i < memoryInfo.Count; i++) {
+				byte[] buff = ReadMemory(process, i);
 				MemInfo info = memoryInfo[i];
-				byte[] buff = new byte[(uint)info.RegionSize];
-				ReadProcessMemory(process.Handle, info.BaseAddress, buff, (uint)info.RegionSize, 0);
 
 				int result = ScanMemory(buff, pattern, mask, offsets);
 				if (result != int.MinValue) {
@@ -355,15 +360,14 @@ namespace LiveSplit.Memory {
 
 			List<IntPtr> pointers = new List<IntPtr>();
 			for (int i = 0; i < memoryInfo.Count; i++) {
+				byte[] buff = ReadMemory(process, i);
 				MemInfo info = memoryInfo[i];
-				byte[] buff = new byte[(uint)info.RegionSize];
-				ReadProcessMemory(process.Handle, info.BaseAddress, buff, (uint)info.RegionSize, 0);
 
 				ScanMemory(pointers, info, buff, pattern, mask, offsets);
 			}
 			return pointers;
 		}
-		private void GetMemoryInfo(IntPtr pHandle) {
+		public void GetMemoryInfo(IntPtr pHandle) {
 			if (memoryInfo != null) { return; }
 
 			memoryInfo = new List<MemInfo>();

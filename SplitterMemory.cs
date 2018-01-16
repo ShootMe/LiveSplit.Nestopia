@@ -140,10 +140,21 @@ namespace LiveSplit.Nestopia {
 			if (program.ProcessName.Equals("nestopia", StringComparison.OrdinalIgnoreCase)) {
 				MemorySearcher searcher = new MemorySearcher();
 				searcher.MemoryFilter = delegate (MemInfo info) {
-					return (info.Protect & 0x4) != 0 && (info.State & 0x1000) != 0 && (info.Type & 0x20000) != 0 && (long)info.RegionSize == 0xe3000;
+					return (info.Protect & 0x4) != 0 && (info.State & 0x1000) != 0 && (info.Type & 0x20000) != 0;
 				};
 
-				return searcher.memoryInfo.Count > 0 ? searcher.memoryInfo[0].BaseAddress + 0xab8 : IntPtr.Zero;
+				searcher.GetMemoryInfo(program.Handle);
+				for (int i = 0; i < searcher.memoryInfo.Count; i++) {
+					byte[] data = searcher.ReadMemory(program, i);
+					int pointer1 = BitConverter.ToInt32(data, 0);
+					int pointer2 = BitConverter.ToInt32(data, 4);
+					long padding = BitConverter.ToInt64(data, 8);
+					if (pointer1 == pointer2 && pointer1 != 0 && padding == 0) {
+						return searcher.memoryInfo[i].BaseAddress + 0xab8;
+					}
+				}
+
+				return IntPtr.Zero;
 			}
 
 			return program.MainModule.BaseAddress + offsets[0];

@@ -48,7 +48,7 @@
 			// cboType
 			// 
 			this.cboType.FormattingEnabled = true;
-			this.cboType.Location = new System.Drawing.Point(190, 3);
+			this.cboType.Location = new System.Drawing.Point(179, 3);
 			this.cboType.Name = "cboType";
 			this.cboType.Size = new System.Drawing.Size(167, 21);
 			this.cboType.TabIndex = 2;
@@ -81,16 +81,16 @@
 			// 
 			this.txtOffset.Location = new System.Drawing.Point(135, 3);
 			this.txtOffset.Name = "txtOffset";
-			this.txtOffset.Size = new System.Drawing.Size(49, 20);
+			this.txtOffset.Size = new System.Drawing.Size(38, 20);
 			this.txtOffset.TabIndex = 1;
 			this.txtOffset.TextChanged += new System.EventHandler(this.txtOffset_TextChanged);
 			this.txtOffset.Validating += new System.ComponentModel.CancelEventHandler(this.txtOffset_Validating);
 			// 
 			// txtValue
 			// 
-			this.txtValue.Location = new System.Drawing.Point(363, 3);
+			this.txtValue.Location = new System.Drawing.Point(352, 3);
 			this.txtValue.Name = "txtValue";
-			this.txtValue.Size = new System.Drawing.Size(69, 20);
+			this.txtValue.Size = new System.Drawing.Size(80, 20);
 			this.txtValue.TabIndex = 3;
 			this.txtValue.TextChanged += new System.EventHandler(this.txtValue_TextChanged);
 			this.txtValue.Validating += new System.ComponentModel.CancelEventHandler(this.txtValue_Validating);

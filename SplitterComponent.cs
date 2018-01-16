@@ -56,7 +56,7 @@ namespace LiveSplit.Nestopia {
 
 			if (currentSplit < Model.CurrentState.Run.Count && settings.Splits.Count > 0) {
 				SplitInfo split = currentSplit + 1 < settings.Splits.Count ? settings.Splits[currentSplit + 1] : null;
-				if (split != null) {
+				if (split != null && split.Size != ValueSize.Manual) {
 					long value = 0;
 					switch (split.Size) {
 						case ValueSize.UInt8: value = mem.Read<byte>(split.Offset); break;

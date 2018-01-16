@@ -15,6 +15,8 @@ namespace LiveSplit.Nestopia {
 		ChangedGreaterThan,
 	}
 	public enum ValueSize {
+		[Description("Manual Split")]
+		Manual,
 		[Description("Unsigned 8 Bits")]
 		UInt8,
 		[Description("Unsigned 16 Bits")]
