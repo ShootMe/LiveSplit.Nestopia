@@ -29,8 +29,6 @@ namespace LiveSplit.Nestopia {
 
 			if (state != null) {
 				Model = new TimerModel() { CurrentState = state };
-				Model.InitializeGameTime();
-				Model.CurrentState.IsGameTimePaused = true;
 				state.OnReset += OnReset;
 				state.OnPause += OnPause;
 				state.OnResume += OnResume;
@@ -56,15 +54,7 @@ namespace LiveSplit.Nestopia {
 			if (currentSplit < Model.CurrentState.Run.Count && settings.Splits.Count > 0) {
 				SplitInfo split = currentSplit + 1 < settings.Splits.Count ? settings.Splits[currentSplit + 1] : null;
 				if (split != null && split.Size != ValueSize.Manual) {
-					long value = 0;
-					switch (split.Size) {
-						case ValueSize.UInt8: value = mem.Read<byte>(split.Offset); break;
-						case ValueSize.Int8: value = mem.Read<sbyte>(split.Offset); break;
-						case ValueSize.UInt16: value = mem.Read<ushort>(split.Offset); break;
-						case ValueSize.Int16: value = mem.Read<short>(split.Offset); break;
-						case ValueSize.UInt32: value = mem.Read<uint>(split.Offset); break;
-						case ValueSize.Int32: value = mem.Read<int>(split.Offset); break;
-					}
+					long value = ReadValue(split);
 					switch (split.Type) {
 						case SplitType.Equals: shouldSplit = value == split.Value && value != split.LastValue; break;
 						case SplitType.GreaterThan: shouldSplit = value > split.Value && value != split.LastValue; break;
@@ -83,6 +73,20 @@ namespace LiveSplit.Nestopia {
 			}
 
 			HandleSplit(shouldSplit, false);
+		}
+		private long ReadValue(SplitInfo split) {
+			long value = 0;
+			if (split != null && split.Size != ValueSize.Manual) {
+				switch (split.Size) {
+					case ValueSize.UInt8: value = mem.Read<byte>(split.Offset); break;
+					case ValueSize.Int8: value = mem.Read<sbyte>(split.Offset); break;
+					case ValueSize.UInt16: value = mem.Read<ushort>(split.Offset); break;
+					case ValueSize.Int16: value = mem.Read<short>(split.Offset); break;
+					case ValueSize.UInt32: value = mem.Read<uint>(split.Offset); break;
+					case ValueSize.Int32: value = mem.Read<int>(split.Offset); break;
+				}
+			}
+			return value;
 		}
 		private void HandleSplit(bool shouldSplit, bool shouldReset = false) {
 			if (shouldReset) {
@@ -118,20 +122,7 @@ namespace LiveSplit.Nestopia {
 						case "Offset": curr = split != null ? split.Offset.ToString() : string.Empty; break;
 						case "SplitValue": curr = split != null ? split.Value.ToString() : string.Empty; break;
 						case "LastValue": curr = split != null ? split.LastValue.ToString() : string.Empty; break;
-						case "Value":
-							long value = 0;
-							if (split != null) {
-								switch (split.Size) {
-									case ValueSize.UInt8: value = mem.Read<byte>(split.Offset); break;
-									case ValueSize.Int8: value = mem.Read<sbyte>(split.Offset); break;
-									case ValueSize.UInt16: value = mem.Read<ushort>(split.Offset); break;
-									case ValueSize.Int16: value = mem.Read<short>(split.Offset); break;
-									case ValueSize.UInt32: value = mem.Read<uint>(split.Offset); break;
-									case ValueSize.Int32: value = mem.Read<int>(split.Offset); break;
-								}
-							}
-							curr = value.ToString();
-							break;
+						case "Value": curr = ReadValue(split).ToString(); break;
 						default: curr = string.Empty; break;
 					}
 
@@ -149,7 +140,12 @@ namespace LiveSplit.Nestopia {
 		public void Update(IInvalidator invalidator, LiveSplitState lvstate, float width, float height, LayoutMode mode) {
 			GetValues();
 		}
-
+		private void UpdateSplitValue() {
+			SplitInfo split = currentSplit + 1 < settings.Splits.Count ? settings.Splits[currentSplit + 1] : null;
+			if (split != null) {
+				split.LastValue = ReadValue(split);
+			}
+		}
 		public void OnReset(object sender, TimerPhase e) {
 			currentSplit = -1;
 			Model.CurrentState.IsGameTimePaused = true;
@@ -163,7 +159,7 @@ namespace LiveSplit.Nestopia {
 		}
 		public void OnStart(object sender, EventArgs e) {
 			currentSplit = 0;
-			Model.CurrentState.IsGameTimePaused = true;
+			UpdateSplitValue();
 			WriteLog("---------New Game-------------------------------");
 		}
 		public void OnUndoSplit(object sender, EventArgs e) {
@@ -171,6 +167,7 @@ namespace LiveSplit.Nestopia {
 			while (currentSplit > 0 && !settings.Splits[currentSplit - 1].ShouldSplit) {
 				currentSplit--;
 			}
+			UpdateSplitValue();
 			WriteLog(DateTime.Now.ToString(@"HH\:mm\:ss.fff") + " | " + Model.CurrentState.CurrentTime.RealTime.Value.ToString("G").Substring(3, 11) + ": CurrentSplit: " + currentSplit.ToString().PadLeft(24, ' '));
 		}
 		public void OnSkipSplit(object sender, EventArgs e) {
@@ -178,11 +175,12 @@ namespace LiveSplit.Nestopia {
 				currentSplit++;
 			}
 			currentSplit++;
+			UpdateSplitValue();
 			WriteLog(DateTime.Now.ToString(@"HH\:mm\:ss.fff") + " | " + Model.CurrentState.CurrentTime.RealTime.Value.ToString("G").Substring(3, 11) + ": CurrentSplit: " + currentSplit.ToString().PadLeft(24, ' '));
 		}
 		public void OnSplit(object sender, EventArgs e) {
 			currentSplit++;
-			Model.CurrentState.IsGameTimePaused = true;
+			UpdateSplitValue();
 			WriteLog(DateTime.Now.ToString(@"HH\:mm\:ss.fff") + " | " + Model.CurrentState.CurrentTime.RealTime.Value.ToString("G").Substring(3, 11) + ": CurrentSplit: " + currentSplit.ToString().PadLeft(24, ' '));
 		}
 		private void WriteLog(string data) {
