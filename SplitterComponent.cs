@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
+using System.Reflection;
 using System.Windows.Forms;
 using System.Xml;
 namespace LiveSplit.Nestopia {
@@ -12,7 +13,7 @@ namespace LiveSplit.Nestopia {
 		public string ComponentName { get { return "Nestopia Autosplitter"; } }
 		public TimerModel Model { get; set; }
 		public IDictionary<string, Action> ContextMenuControls { get { return null; } }
-		internal static string[] keys = { "CurrentSplit", "Pointer", "Type", "Size", "Offset", "Value", "LastValue" };
+		internal static string[] keys = { "CurrentSplit", "Pointer", "Value" };
 		private SplitterMemory mem;
 		private int currentSplit = -1, lastLogCheck;
 		private bool hasLog = false;
@@ -51,24 +52,26 @@ namespace LiveSplit.Nestopia {
 		private void HandleSplits() {
 			bool shouldSplit = false;
 
-			if (currentSplit < Model.CurrentState.Run.Count && settings.Splits.Count > 0) {
-				SplitInfo split = currentSplit + 1 < settings.Splits.Count ? settings.Splits[currentSplit + 1] : null;
-				if (split != null && split.Size != ValueSize.Manual) {
-					long value = ReadValue(split);
-					switch (split.Type) {
-						case SplitType.Equals: shouldSplit = value == split.Value && value != split.LastValue; break;
-						case SplitType.GreaterThan: shouldSplit = value > split.Value && value != split.LastValue; break;
-						case SplitType.LessThan: shouldSplit = value < split.Value && value != split.LastValue; break;
-						case SplitType.Changed: shouldSplit = value != split.LastValue; break;
-						case SplitType.ChangedGreaterThan: shouldSplit = value > split.LastValue; break;
-						case SplitType.ChangedLessThan: shouldSplit = value < split.LastValue; break;
-					}
-					split.LastValue = value;
+			SplitInfo split = currentSplit + 1 < settings.Splits.Count ? settings.Splits[currentSplit + 1] : null;
+			if (split != null && split.Size != ValueSize.Manual) {
+				long value = ReadValue(split);
+				switch (split.Type) {
+					case SplitType.Equals: shouldSplit = value == split.Value && value != split.LastValue; break;
+					case SplitType.GreaterThan: shouldSplit = value > split.Value && value != split.LastValue; break;
+					case SplitType.LessThan: shouldSplit = value < split.Value && value != split.LastValue; break;
+					case SplitType.Changed: shouldSplit = value != split.LastValue; break;
+					case SplitType.ChangedGreaterThan: shouldSplit = value > split.LastValue; break;
+					case SplitType.ChangedLessThan: shouldSplit = value < split.LastValue; break;
+				}
+				split.LastValue = value;
 
-					if (!split.ShouldSplit && shouldSplit) {
-						currentSplit++;
-						shouldSplit = false;
-					}
+				if (!split.ShouldSplit && shouldSplit) {
+					LogValues();
+					currentSplit++;
+					shouldSplit = false;
+					WriteLog(GetSplitInfo());
+				} else if (shouldSplit) {
+					LogValues();
 				}
 			}
 
@@ -117,12 +120,7 @@ namespace LiveSplit.Nestopia {
 					switch (key) {
 						case "CurrentSplit": curr = currentSplit.ToString(); break;
 						case "Pointer": curr = mem.Pointer(); break;
-						case "Type": curr = split != null ? split.Type.ToString() : string.Empty; break;
-						case "Size": curr = split != null ? split.Size.ToString() : string.Empty; break;
-						case "Offset": curr = split != null ? split.Offset.ToString() : string.Empty; break;
-						case "SplitValue": curr = split != null ? split.Value.ToString() : string.Empty; break;
-						case "LastValue": curr = split != null ? split.LastValue.ToString() : string.Empty; break;
-						case "Value": curr = ReadValue(split).ToString(); break;
+						case "Value": curr = split != null ? split.LastValue.ToString() : string.Empty; break;
 						default: curr = string.Empty; break;
 					}
 
@@ -146,10 +144,17 @@ namespace LiveSplit.Nestopia {
 				split.LastValue = ReadValue(split);
 			}
 		}
+		private string GetSplitInfo() {
+			SplitInfo split = currentSplit + 1 < settings.Splits.Count ? settings.Splits[currentSplit + 1] : null;
+			if (split == null) { return "(No More Splits In Settings)"; }
+
+			return (split.ShouldSplit ? "(Split) " : "(Sub) ") + split.Offset.ToString() + "[" + split.Size.ToString() + "] " + split.Type.ToString() + " " + split.Value.ToString();
+		}
 		public void OnReset(object sender, TimerPhase e) {
 			currentSplit = -1;
 			Model.CurrentState.IsGameTimePaused = true;
 			WriteLog("---------Reset----------------------------------");
+			WriteLog(GetSplitInfo());
 		}
 		public void OnResume(object sender, EventArgs e) {
 			WriteLog("---------Resumed--------------------------------");
@@ -160,28 +165,32 @@ namespace LiveSplit.Nestopia {
 		public void OnStart(object sender, EventArgs e) {
 			currentSplit = 0;
 			UpdateSplitValue();
-			WriteLog("---------New Game-------------------------------");
+			WriteLog("---------New Game " + Assembly.GetExecutingAssembly().GetName().Version.ToString(3) + "-------------------------");
+			WriteLog(GetSplitInfo());
 		}
 		public void OnUndoSplit(object sender, EventArgs e) {
-			while (currentSplit > 0 && !settings.Splits[--currentSplit].ShouldSplit) { }
-			while (currentSplit > 0 && !settings.Splits[currentSplit - 1].ShouldSplit) {
+			while (currentSplit > 0 && !settings.Splits[currentSplit--].ShouldSplit) { }
+			while (currentSplit > 0 && !settings.Splits[currentSplit].ShouldSplit) {
 				currentSplit--;
 			}
 			UpdateSplitValue();
-			WriteLog(DateTime.Now.ToString(@"HH\:mm\:ss.fff") + " | " + Model.CurrentState.CurrentTime.RealTime.Value.ToString("G").Substring(3, 11) + ": CurrentSplit: " + currentSplit.ToString().PadLeft(24, ' '));
+			WriteLog("---------Undo-----------------------------------");
+			WriteLog(GetSplitInfo());
 		}
 		public void OnSkipSplit(object sender, EventArgs e) {
-			while (currentSplit < settings.Splits.Count && !settings.Splits[currentSplit].ShouldSplit) {
+			while (currentSplit + 1 < settings.Splits.Count && !settings.Splits[currentSplit + 1].ShouldSplit) {
 				currentSplit++;
 			}
 			currentSplit++;
 			UpdateSplitValue();
-			WriteLog(DateTime.Now.ToString(@"HH\:mm\:ss.fff") + " | " + Model.CurrentState.CurrentTime.RealTime.Value.ToString("G").Substring(3, 11) + ": CurrentSplit: " + currentSplit.ToString().PadLeft(24, ' '));
+			WriteLog("---------Skip-----------------------------------");
+			WriteLog(GetSplitInfo());
 		}
 		public void OnSplit(object sender, EventArgs e) {
 			currentSplit++;
 			UpdateSplitValue();
-			WriteLog(DateTime.Now.ToString(@"HH\:mm\:ss.fff") + " | " + Model.CurrentState.CurrentTime.RealTime.Value.ToString("G").Substring(3, 11) + ": CurrentSplit: " + currentSplit.ToString().PadLeft(24, ' '));
+			WriteLog("---------Split-----------------------------------");
+			WriteLog(GetSplitInfo());
 		}
 		private void WriteLog(string data) {
 			if (hasLog || !Console.IsOutputRedirected) {

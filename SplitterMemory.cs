@@ -21,7 +21,12 @@ namespace LiveSplit.Nestopia {
 				if (ram != IntPtr.Zero) {
 					return Program.Read<T>(ram + address);
 				}
-				return RAM.Read<T>(Program, 0x0, 0x20, address + 0x10);
+				ram = (IntPtr)RAM.Read<ulong>(Program, 0x0, 0x20);
+				if (ram == IntPtr.Zero) {
+					RAM.ClearPointer();
+					return RAM.Read<T>(Program, 0x0, 0x20, address + 0x10);
+				}
+				return Program.Read<T>(ram + address + 0x10);
 			}
 			return RAM.Read<T>(Program, 0x0, address);
 		}
@@ -120,6 +125,9 @@ namespace LiveSplit.Nestopia {
 			GetPointer(program);
 			program.Write(Pointer, value, offsets);
 		}
+		public void ClearPointer() {
+			Pointer = IntPtr.Zero;
+		}
 		public IntPtr GetPointer(Process program) {
 			if (program == null) {
 				Pointer = IntPtr.Zero;
@@ -155,6 +163,7 @@ namespace LiveSplit.Nestopia {
 		}
 		private IntPtr GetVersionedFunctionPointer(Process program) {
 			if (program.ProcessName.Equals("nestopia", StringComparison.OrdinalIgnoreCase)) {
+				AutoDeref = AutoDeref.None;
 				MemorySearcher searcher = new MemorySearcher();
 				searcher.MemoryFilter = delegate (MemInfo info) {
 					return (info.Protect & 0x4) != 0 && (info.State & 0x1000) != 0 && (info.Type & 0x20000) != 0;
@@ -178,7 +187,7 @@ namespace LiveSplit.Nestopia {
 					return (info.Protect & 0x40) != 0 && (info.State & 0x1000) != 0 && (info.Type & 0x20000) != 0;
 				};
 				//BizHawk.Client.Common.Global.get_SystemInfo
-				ProgramSignature signature = new ProgramSignature(PointerVersion.V1, "488B0949BB????????????????390941FF13488BF0488BCE", -8);
+				ProgramSignature signature = new ProgramSignature(PointerVersion.V1, "488B0949BB????????????????390941FF13488BF0488BCEE8", -8);
 
 				IntPtr ptr = searcher.FindSignature(program, signature.Signature);
 				if (ptr != IntPtr.Zero) {
